@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Fighter, FighterDetails } from "../types/fighter";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FighterDetails } from "../types/fighter";
 import { controls } from "../constants/controls";
 import { getDamage, getCriticalHitDamage } from "../utils/fighterUtils";
 
@@ -20,7 +20,6 @@ export const Arena: React.FC<ArenaProps> = ({
   const [player2Block, setPlayer2Block] = useState(false);
   const [player1CriticalCooldown, setPlayer1CriticalCooldown] = useState(false);
   const [player2CriticalCooldown, setPlayer2CriticalCooldown] = useState(false);
-  const [keysPressed, setKeysPressed] = useState<Set<string>>(new Set());
   const [fightInProgress, setFightInProgress] = useState(false);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [winner, setWinner] = useState<FighterDetails | null>(null);
@@ -28,27 +27,66 @@ export const Arena: React.FC<ArenaProps> = ({
   const player1CritKeysRef = useRef<string[]>([]);
   const player2CritKeysRef = useRef<string[]>([]);
 
+  const handleAttack = useCallback(
+    (player: 1 | 2) => {
+      if (!fightInProgress) return;
+
+      if (player === 1 && !player1Block) {
+        if (player2Block) return;
+
+        const damage = getDamage(leftFighter, rightFighter);
+        setPlayer2Health((prev) => Math.max(0, prev - damage));
+      } else if (player === 2 && !player2Block) {
+        if (player1Block) return;
+
+        const damage = getDamage(rightFighter, leftFighter);
+        setPlayer1Health((prev) => Math.max(0, prev - damage));
+      }
+    },
+    [fightInProgress, player1Block, player2Block, leftFighter, rightFighter]
+  );
+
+  const handleCriticalHit = useCallback(
+    (player: 1 | 2) => {
+      if (!fightInProgress) return;
+
+      if (player === 1 && !player1CriticalCooldown) {
+        const criticalDamage = getCriticalHitDamage(leftFighter.attack);
+        setPlayer2Health((prev) => Math.max(0, prev - criticalDamage));
+        setPlayer1CriticalCooldown(true);
+        setTimeout(() => setPlayer1CriticalCooldown(false), 10000);
+      } else if (player === 2 && !player2CriticalCooldown) {
+        const criticalDamage = getCriticalHitDamage(rightFighter.attack);
+        setPlayer1Health((prev) => Math.max(0, prev - criticalDamage));
+        setPlayer2CriticalCooldown(true);
+        setTimeout(() => setPlayer2CriticalCooldown(false), 10000);
+      }
+    },
+    [
+      fightInProgress,
+      player1CriticalCooldown,
+      player2CriticalCooldown,
+      leftFighter.attack,
+      rightFighter.attack,
+    ]
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!fightInProgress) return;
 
-      setKeysPressed((prev) => new Set([...prev, e.code]));
-
-      // Player 1 Controls
       if (e.code === controls.PlayerOne.attack && !player1Block) {
         handleAttack(1);
       } else if (e.code === controls.PlayerOne.block) {
         setPlayer1Block(true);
       }
 
-      // Player 2 Controls
       if (e.code === controls.PlayerTwo.attack && !player2Block) {
         handleAttack(2);
       } else if (e.code === controls.PlayerTwo.block) {
         setPlayer2Block(true);
       }
 
-      // Critical hit logic for Player 1
       if (controls.PlayerOne.criticalHitCombination.includes(e.code)) {
         player1CritKeysRef.current.push(e.code);
 
@@ -63,7 +101,6 @@ export const Arena: React.FC<ArenaProps> = ({
         }
       }
 
-      // Critical hit logic for Player 2
       if (controls.PlayerTwo.criticalHitCombination.includes(e.code)) {
         player2CritKeysRef.current.push(e.code);
 
@@ -80,12 +117,6 @@ export const Arena: React.FC<ArenaProps> = ({
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      setKeysPressed((prev) => {
-        const newSet = new Set([...prev]);
-        newSet.delete(e.code);
-        return newSet;
-      });
-
       if (e.code === controls.PlayerOne.block) {
         setPlayer1Block(false);
       }
@@ -120,6 +151,8 @@ export const Arena: React.FC<ArenaProps> = ({
     player2Block,
     player1CriticalCooldown,
     player2CriticalCooldown,
+    handleAttack,
+    handleCriticalHit,
   ]);
 
   useEffect(() => {
@@ -153,38 +186,6 @@ export const Arena: React.FC<ArenaProps> = ({
     fightInProgress,
   ]);
 
-  const handleAttack = (player: 1 | 2) => {
-    if (!fightInProgress) return;
-
-    if (player === 1 && !player1Block) {
-      if (player2Block) return;
-
-      const damage = getDamage(leftFighter, rightFighter);
-      setPlayer2Health((prev) => Math.max(0, prev - damage));
-    } else if (player === 2 && !player2Block) {
-      if (player1Block) return;
-
-      const damage = getDamage(rightFighter, leftFighter);
-      setPlayer1Health((prev) => Math.max(0, prev - damage));
-    }
-  };
-
-  const handleCriticalHit = (player: 1 | 2) => {
-    if (!fightInProgress) return;
-
-    if (player === 1 && !player1CriticalCooldown) {
-      const criticalDamage = getCriticalHitDamage(leftFighter.attack);
-      setPlayer2Health((prev) => Math.max(0, prev - criticalDamage));
-      setPlayer1CriticalCooldown(true);
-      setTimeout(() => setPlayer1CriticalCooldown(false), 10000);
-    } else if (player === 2 && !player2CriticalCooldown) {
-      const criticalDamage = getCriticalHitDamage(rightFighter.attack);
-      setPlayer1Health((prev) => Math.max(0, prev - criticalDamage));
-      setPlayer2CriticalCooldown(true);
-      setTimeout(() => setPlayer2CriticalCooldown(false), 10000);
-    }
-  };
-
   const startFight = () => {
     setFightInProgress(true);
     setPlayer1Health(leftFighter.health);
@@ -210,7 +211,6 @@ export const Arena: React.FC<ArenaProps> = ({
       <div className="w-full max-w-4xl bg-gray-200 p-6 rounded-lg relative">
         <h2 className="text-2xl font-bold text-center mb-6">Арена бою</h2>
 
-        {/* Health bars */}
         <div className="flex justify-between mb-4">
           <div className="w-1/2 pr-2">
             <div className="h-6 bg-gray-300 rounded-full overflow-hidden">
@@ -247,7 +247,6 @@ export const Arena: React.FC<ArenaProps> = ({
           </div>
         </div>
 
-        {/* Fighter images */}
         <div className="flex justify-between items-end mt-8">
           <div
             className={`transition-all duration-200 ${
@@ -304,7 +303,6 @@ export const Arena: React.FC<ArenaProps> = ({
           </div>
         </div>
 
-        {/* Fight button */}
         <div className="mt-8 text-center">
           <button
             onClick={startFight}
@@ -320,7 +318,6 @@ export const Arena: React.FC<ArenaProps> = ({
         </div>
       </div>
 
-      {/* Winner modal */}
       {showWinnerModal && winner && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full text-center">
@@ -350,28 +347,3 @@ export const Arena: React.FC<ArenaProps> = ({
     </div>
   );
 };
-
-export function renderArena(leftFighter: Fighter, rightFighter: Fighter) {
-  return new Promise<Fighter>((resolve) => {
-    const winner = fight(leftFighter, rightFighter).then((winner) => {
-      showWinnerModal(winner);
-      resolve(winner);
-    });
-  });
-}
-
-export function fight(
-  leftFighter: Fighter,
-  rightFighter: Fighter
-): Promise<Fighter> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const winner = Math.random() > 0.5 ? leftFighter : rightFighter;
-      resolve(winner);
-    }, 1000);
-  });
-}
-
-export function showWinnerModal(winner: Fighter) {
-  console.log(`Переможець: ${winner.name}`);
-}
