@@ -33,5 +33,37 @@ export const MOCK_FIGHTERS = [
     attack: 22,
     defense: 18,
     source: 'https://images.pexels.com/photos/7561910/pexels-photo-7561910.jpeg'
+  },
+  {
+    id: '5',
+    name: 'Акума',
+    health: 85,
+    attack: 25,
+    defense: 10,
+    source: 'https://images.pexels.com/photos/7562156/pexels-photo-7562156.jpeg'
+  },
+  {
+    id: '6',
+    name: 'Сагат',
+    health: 95,
+    attack: 23,
+    defense: 15,
+    source: 'https://images.pexels.com/photos/7561973/pexels-photo-7561973.jpeg'
+  },
+  {
+    id: '7',
+    name: 'Бланка',
+    health: 105,
+    attack: 19,
+    defense: 17,
+    source: 'https://images.pexels.com/photos/7562088/pexels-photo-7562088.jpeg'
+  },
+  {
+    id: '8',
+    name: 'Зангієф',
+    health: 120,
+    attack: 21,
+    defense: 16,
+    source: 'https://images.pexels.com/photos/7562198/pexels-photo-7562198.jpeg'
   }
 ];
