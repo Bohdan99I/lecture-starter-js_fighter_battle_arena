@@ -1,5 +1,5 @@
-import React from 'react';
-import { Fighter } from '../types/fighter';
+import React from "react";
+import { Fighter } from "../types/fighter";
 
 interface FighterPreviewProps {
   fighter: Fighter;
@@ -10,9 +10,9 @@ export const FighterPreview: React.FC<FighterPreviewProps> = ({ fighter }) => {
 
   return (
     <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md transition-all duration-300 hover:shadow-lg">
-      <img 
-        src={source} 
-        alt={name} 
+      <img
+        src={source}
+        alt={name}
         className="w-32 h-32 object-cover mb-4 rounded-md"
       />
       <h2 className="text-xl font-bold mb-2">{name}</h2>
@@ -34,22 +34,26 @@ export const FighterPreview: React.FC<FighterPreviewProps> = ({ fighter }) => {
   );
 };
 
-export function createFighterPreview(fighter: Fighter, position: 'left' | 'right'): HTMLElement {
-  const container = document.createElement('div');
-  container.className = 'fighter-preview';
-  
-  const fighterElement = document.createElement('div');
-  fighterElement.className = position === 'left' ? 'fighter-left' : 'fighter-right';
-  
-  const imageElement = document.createElement('img');
+export function createFighterPreview(
+  fighter: Fighter,
+  position: "left" | "right"
+): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "fighter-preview";
+
+  const fighterElement = document.createElement("div");
+  fighterElement.className =
+    position === "left" ? "fighter-left" : "fighter-right";
+
+  const imageElement = document.createElement("img");
   imageElement.src = fighter.source;
   imageElement.alt = fighter.name;
-  
-  const nameElement = document.createElement('div');
+
+  const nameElement = document.createElement("div");
   nameElement.innerText = fighter.name;
-  
+
   fighterElement.append(imageElement, nameElement);
   container.append(fighterElement);
-  
+
   return container;
 }
